@@ -1,0 +1,755 @@
+# Building a To-Do List App with Next.js 15, Prisma, and SQLite
+
+This tutorial will guide you through building a complete To-Do list application using Next.js 15, Prisma ORM, and SQLite. By the end, you'll have a functional app with CRUD operations for managing your tasks.
+
+## Table of Contents
+
+1. [Setting Up the Project](#1-setting-up-the-project)
+2. [Configuring Prisma with SQLite](#2-configuring-prisma-with-sqlite)
+3. [Creating the Database Schema](#3-creating-the-database-schema)
+4. [Generating Prisma Client](#4-generating-prisma-client)
+5. [Creating API Endpoints](#5-creating-api-endpoints)
+6. [Building the Frontend UI](#6-building-the-frontend-ui)
+7. [Adding Authentication (Bonus)](#7-adding-authentication-bonus)
+8. [Deploying Your Application (Bonus)](#8-deploying-your-application-bonus)
+
+## 1. Setting Up the Project
+
+### Installing Dependencies
+
+```bash
+# Install Prisma and SQLite packages
+npm install prisma @prisma/client
+npm install -D prisma
+
+# Initialize Prisma
+npx prisma init
+```
+
+### Updating tsconfig.json (if needed)
+
+Make sure your `tsconfig.json` includes these settings for working with Prisma:
+
+```json
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+```
+
+## 2. Configuring Prisma with SQLite
+
+### Update .env file
+
+Create or update your `.env` file to include the SQLite database URL:
+
+```
+DATABASE_URL="file:./dev.db"
+```
+
+### Update your Prisma schema file
+
+Edit the `prisma/schema.prisma` file to use SQLite:
+
+```prisma
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+```
+
+## 3. Creating the Database Schema
+
+### Define your To-Do list models
+
+Update your `schema.prisma` file to include the To-Do list models:
+
+```prisma
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  todos     Todo[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Todo {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  completed   Boolean   @default(false)
+  dueDate     DateTime?
+  priority    Priority  @default(MEDIUM)
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+```
+
+### Create and apply migrations
+
+Run the following command to create and apply migrations:
+
+```bash
+npx prisma migrate dev --name init
+```
+
+## 4. Generating Prisma Client
+
+### Generate Prisma Client
+
+```bash
+npx prisma generate
+```
+
+### Create a database connection utility
+
+Create a new file `src/lib/prisma.ts`:
+
+```typescript
+import { PrismaClient } from "@prisma/client";
+
+// PrismaClient is attached to the `global` object in development to prevent
+// exhausting your database connection limit during hot reloads.
+const globalForPrisma = global as unknown as { prisma: PrismaClient };
+
+export const prisma = globalForPrisma.prisma || new PrismaClient();
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+
+export default prisma;
+```
+
+## 5. Creating API Endpoints
+
+### Creating API routes for todos
+
+In Next.js 15, we'll use Route Handlers in the App Router to create our API.
+
+Create a new file `src/app/api/todos/route.ts`:
+
+```typescript
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+
+export async function GET() {
+  try {
+    const todos = await prisma.todo.findMany({
+      include: {
+        user: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return NextResponse.json(todos);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to fetch todos" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { title, description, userId, dueDate, priority } = body;
+
+    // Validation
+    if (!title || !userId) {
+      return NextResponse.json(
+        { error: "Title and user ID are required" },
+        { status: 400 }
+      );
+    }
+
+    const newTodo = await prisma.todo.create({
+      data: {
+        title,
+        description,
+        userId,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        priority: priority || "MEDIUM",
+      },
+    });
+
+    return NextResponse.json(newTodo, { status: 201 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to create todo" },
+      { status: 500 }
+    );
+  }
+}
+```
+
+### Creating API route for individual todo operations
+
+Create a new file `src/app/api/todos/[id]/route.ts`:
+
+```typescript
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const id = parseInt(params.id);
+
+    const todo = await prisma.todo.findUnique({
+      where: { id },
+      include: { user: true },
+    });
+
+    if (!todo) {
+      return NextResponse.json({ error: "Todo not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(todo);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to fetch todo" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const id = parseInt(params.id);
+    const body = await request.json();
+
+    const updatedTodo = await prisma.todo.update({
+      where: { id },
+      data: body,
+    });
+
+    return NextResponse.json(updatedTodo);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to update todo" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const id = parseInt(params.id);
+
+    await prisma.todo.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ message: "Todo deleted successfully" });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to delete todo" },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## 6. Building the Frontend UI
+
+### Creating Server Components for Todos
+
+First, let's create some type definitions for our data models in `src/types/index.ts`:
+
+```typescript
+export type User = {
+  id: number;
+  email: string;
+  name: string | null;
+};
+
+export type Todo = {
+  id: number;
+  title: string;
+  description: string | null;
+  completed: boolean;
+  dueDate: string | null;
+  priority: "LOW" | "MEDIUM" | "HIGH";
+  userId: number;
+  createdAt: string;
+  updatedAt: string;
+  user?: User;
+};
+```
+
+### Creating the main page component
+
+Update `src/app/page.tsx`:
+
+```tsx
+import TodoList from "@/components/TodoList";
+import TodoForm from "@/components/TodoForm";
+import prisma from "@/lib/prisma";
+
+export default async function Home() {
+  // For simplicity, we'll hardcode a user ID
+  // In a real app, this would come from authentication
+  const userId = 1;
+
+  // Create a default user if none exists
+  const userCount = await prisma.user.count();
+
+  if (userCount === 0) {
+    await prisma.user.create({
+      data: {
+        email: "user@example.com",
+        name: "Demo User",
+      },
+    });
+  }
+
+  // Get the user (or the first user if multiple exist)
+  const user = await prisma.user.findFirst();
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Fetch todos for this user
+  const todos = await prisma.todo.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return (
+    <main className="max-w-4xl mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-8 text-center">My Todo List</h1>
+
+      <div className="grid md:grid-cols-2 gap-8">
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Add New Todo</h2>
+          <TodoForm userId={user.id} />
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-4">My Todos</h2>
+          <TodoList initialTodos={todos} />
+        </div>
+      </div>
+    </main>
+  );
+}
+```
+
+### Creating the TodoForm component
+
+Create a file `src/components/TodoForm.tsx`:
+
+```tsx
+"use client";
+
+import { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
+
+type TodoFormProps = {
+  userId: number;
+};
+
+export default function TodoForm({ userId }: TodoFormProps) {
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    priority: "MEDIUM",
+    dueDate: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/todos", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          userId,
+        }),
+      });
+
+      if (response.ok) {
+        // Reset form
+        setFormData({
+          title: "",
+          description: "",
+          priority: "MEDIUM",
+          dueDate: "",
+        });
+
+        // Refresh the page to show the new todo
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Error creating todo:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-white p-4 rounded shadow">
+      <div className="mb-4">
+        <label htmlFor="title" className="block mb-1 font-medium">
+          Title
+        </label>
+        <input
+          type="text"
+          id="title"
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          required
+          className="w-full p-2 border rounded"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label htmlFor="description" className="block mb-1 font-medium">
+          Description
+        </label>
+        <textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) =>
+            setFormData({ ...formData, description: e.target.value })
+          }
+          className="w-full p-2 border rounded"
+          rows={3}
+        />
+      </div>
+
+      <div className="mb-4">
+        <label htmlFor="priority" className="block mb-1 font-medium">
+          Priority
+        </label>
+        <select
+          id="priority"
+          value={formData.priority}
+          onChange={(e) =>
+            setFormData({ ...formData, priority: e.target.value })
+          }
+          className="w-full p-2 border rounded"
+        >
+          <option value="LOW">Low</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="HIGH">High</option>
+        </select>
+      </div>
+
+      <div className="mb-4">
+        <label htmlFor="dueDate" className="block mb-1 font-medium">
+          Due Date
+        </label>
+        <input
+          type="date"
+          id="dueDate"
+          value={formData.dueDate}
+          onChange={(e) =>
+            setFormData({ ...formData, dueDate: e.target.value })
+          }
+          className="w-full p-2 border rounded"
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300"
+      >
+        {isSubmitting ? "Adding..." : "Add Todo"}
+      </button>
+    </form>
+  );
+}
+```
+
+### Creating the TodoList component
+
+Create a file `src/components/TodoList.tsx`:
+
+```tsx
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Todo } from "@/types";
+import TodoItem from "./TodoItem";
+
+type TodoListProps = {
+  initialTodos: Todo[];
+};
+
+export default function TodoList({ initialTodos }: TodoListProps) {
+  const router = useRouter();
+  const [todos, setTodos] = useState<Todo[]>(initialTodos);
+
+  const toggleTodoStatus = async (id: number, completed: boolean) => {
+    try {
+      const response = await fetch(`/api/todos/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ completed }),
+      });
+
+      if (response.ok) {
+        // Update local state
+        setTodos(
+          todos.map((todo) => (todo.id === id ? { ...todo, completed } : todo))
+        );
+      }
+    } catch (error) {
+      console.error("Error updating todo:", error);
+    }
+  };
+
+  const deleteTodo = async (id: number) => {
+    try {
+      const response = await fetch(`/api/todos/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        // Update local state
+        setTodos(todos.filter((todo) => todo.id !== id));
+      }
+    } catch (error) {
+      console.error("Error deleting todo:", error);
+    }
+  };
+
+  if (todos.length === 0) {
+    return <p className="text-gray-500">No todos yet. Add some!</p>;
+  }
+
+  return (
+    <ul className="space-y-3">
+      {todos.map((todo) => (
+        <TodoItem
+          key={todo.id}
+          todo={todo}
+          onToggle={toggleTodoStatus}
+          onDelete={deleteTodo}
+        />
+      ))}
+    </ul>
+  );
+}
+```
+
+### Creating the TodoItem component
+
+Create a file `src/components/TodoItem.tsx`:
+
+```tsx
+import { Todo } from "@/types";
+
+type TodoItemProps = {
+  todo: Todo;
+  onToggle: (id: number, completed: boolean) => void;
+  onDelete: (id: number) => void;
+};
+
+export default function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
+  const priorityColors = {
+    LOW: "bg-green-100 text-green-800",
+    MEDIUM: "bg-yellow-100 text-yellow-800",
+    HIGH: "bg-red-100 text-red-800",
+  };
+
+  const formattedDate = todo.dueDate
+    ? new Date(todo.dueDate).toLocaleDateString()
+    : null;
+
+  return (
+    <li className="border rounded p-4 bg-white shadow-sm">
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={todo.completed}
+            onChange={(e) => onToggle(todo.id, e.target.checked)}
+            className="mt-1"
+          />
+
+          <div>
+            <h3
+              className={`font-medium ${
+                todo.completed ? "line-through text-gray-500" : ""
+              }`}
+            >
+              {todo.title}
+            </h3>
+
+            {todo.description && (
+              <p className="text-gray-600 mt-1 text-sm">{todo.description}</p>
+            )}
+
+            <div className="flex gap-2 mt-2">
+              <span
+                className={`text-xs px-2 py-1 rounded ${
+                  priorityColors[todo.priority as keyof typeof priorityColors]
+                }`}
+              >
+                {todo.priority}
+              </span>
+
+              {formattedDate && (
+                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded">
+                  Due: {formattedDate}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={() => onDelete(todo.id)}
+          className="text-red-500 hover:text-red-700"
+        >
+          Delete
+        </button>
+      </div>
+    </li>
+  );
+}
+```
+
+### Update app layout with styling
+
+To make sure we're using Tailwind CSS properly, update your `src/app/layout.tsx`:
+
+```tsx
+import "./globals.css";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Todo App with Next.js, Prisma, and SQLite",
+  description: "A simple todo application for learning purposes",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className={`${inter.className} bg-gray-50 min-h-screen`}>
+        {children}
+      </body>
+    </html>
+  );
+}
+```
+
+## 7. Adding Authentication (Bonus)
+
+For simplicity, we've hardcoded a user ID in this tutorial. In a real application, you would want to add authentication. Consider using:
+
+- [NextAuth.js](https://next-auth.js.org/) for authentication
+- [Clerk](https://clerk.dev/) for ready-made auth components
+- [Auth0](https://auth0.com/) for enterprise-grade authentication
+
+You would then modify your Todo components to use the current authenticated user's ID.
+
+## 8. Deploying Your Application (Bonus)
+
+Once your application is ready, you might want to deploy it. Here are some options:
+
+- [Vercel](https://vercel.com/) - Built by the creators of Next.js, excellent for Next.js apps
+- [Netlify](https://www.netlify.com/) - Easy deployment with CI/CD
+- [Railway](https://railway.app/) - Good for hosting both your app and database
+
+Note for SQLite: SQLite is a file-based database, which means it's not ideal for production deployments on platforms with ephemeral filesystems. For production, consider switching to:
+
+- PostgreSQL
+- MySQL
+- MongoDB (would require schema changes)
+
+## Next Steps
+
+Congratulations! You've built a functional To-Do list application with Next.js 15, Prisma, and SQLite. Here are some ideas to enhance your application:
+
+1. Add user authentication
+2. Implement categories or tags for todos
+3. Add sorting and filtering options
+4. Create a dark mode toggle
+5. Implement drag-and-drop for reordering todos
+6. Add due date notifications
+7. Create a mobile app using React Native with the same backend
+
+Happy coding!
