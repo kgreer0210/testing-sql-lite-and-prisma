@@ -1,6 +1,7 @@
 "use client";
 
 import { Todo } from "@/types";
+import { API_BASE_URL } from "@/config";
 import {
   useMutation,
   useQuery,
@@ -22,7 +23,7 @@ export function useTodos() {
   return useQuery({
     queryKey: todoKeys.lists(),
     queryFn: async () => {
-      const response = await fetch("/api/todos");
+      const response = await fetch(`${API_BASE_URL}/api/todos`);
       if (!response.ok) {
         throw new Error("Failed to fetch todos");
       }
@@ -36,7 +37,7 @@ export function useTodo(id: number) {
   return useQuery({
     queryKey: todoKeys.detail(id),
     queryFn: async () => {
-      const response = await fetch(`/api/todos/${id}`);
+      const response = await fetch(`${API_BASE_URL}/api/todos/${id}`);
       if (!response.ok) {
         throw new Error("Failed to fetch todo");
       }
@@ -53,7 +54,7 @@ export function useAddTodo() {
     mutationFn: async (
       newTodo: Omit<Todo, "id" | "createdAt" | "updatedAt">
     ) => {
-      const response = await fetch("/api/todos", {
+      const response = await fetch(`${API_BASE_URL}/api/todos`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -80,7 +81,7 @@ export function useUpdateTodo() {
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Todo> & { id: number }) => {
-      const response = await fetch(`/api/todos/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/todos/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -114,7 +115,7 @@ export function useToggleTodoCompletion() {
       id: number;
       completed: boolean;
     }) => {
-      const response = await fetch(`/api/todos/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/todos/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -184,7 +185,7 @@ export function useDeleteTodo() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/todos/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/todos/${id}`, {
         method: "DELETE",
       });
 

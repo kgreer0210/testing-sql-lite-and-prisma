@@ -143,11 +143,7 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
-exports.Priority = exports.$Enums.Priority = {
-  LOW: 'LOW',
-  MEDIUM: 'MEDIUM',
-  HIGH: 'HIGH'
-};
+
 
 exports.Prisma.ModelName = {
   User: 'User',

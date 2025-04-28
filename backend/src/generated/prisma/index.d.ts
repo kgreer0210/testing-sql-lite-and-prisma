@@ -25,24 +25,6 @@ export type User = $Result.DefaultSelection<Prisma.$UserPayload>
 export type Todo = $Result.DefaultSelection<Prisma.$TodoPayload>
 
 /**
- * Enums
- */
-export namespace $Enums {
-  export const Priority: {
-  LOW: 'LOW',
-  MEDIUM: 'MEDIUM',
-  HIGH: 'HIGH'
-};
-
-export type Priority = (typeof Priority)[keyof typeof Priority]
-
-}
-
-export type Priority = $Enums.Priority
-
-export const Priority: typeof $Enums.Priority
-
-/**
  * ##  Prisma Client ʲˢ
  *
  * Type-safe database client for TypeScript & Node.js
@@ -2138,7 +2120,7 @@ export namespace Prisma {
     description: string | null
     completed: boolean | null
     dueDate: Date | null
-    priority: $Enums.Priority | null
+    priority: string | null
     userId: number | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -2150,7 +2132,7 @@ export namespace Prisma {
     description: string | null
     completed: boolean | null
     dueDate: Date | null
-    priority: $Enums.Priority | null
+    priority: string | null
     userId: number | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -2309,7 +2291,7 @@ export namespace Prisma {
     description: string | null
     completed: boolean
     dueDate: Date | null
-    priority: $Enums.Priority
+    priority: string
     userId: number
     createdAt: Date
     updatedAt: Date
@@ -2407,7 +2389,7 @@ export namespace Prisma {
       description: string | null
       completed: boolean
       dueDate: Date | null
-      priority: $Enums.Priority
+      priority: string
       userId: number
       createdAt: Date
       updatedAt: Date
@@ -2840,7 +2822,7 @@ export namespace Prisma {
     readonly description: FieldRef<"Todo", 'String'>
     readonly completed: FieldRef<"Todo", 'Boolean'>
     readonly dueDate: FieldRef<"Todo", 'DateTime'>
-    readonly priority: FieldRef<"Todo", 'Priority'>
+    readonly priority: FieldRef<"Todo", 'String'>
     readonly userId: FieldRef<"Todo", 'Int'>
     readonly createdAt: FieldRef<"Todo", 'DateTime'>
     readonly updatedAt: FieldRef<"Todo", 'DateTime'>
@@ -3343,13 +3325,6 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Priority'
-   */
-  export type EnumPriorityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Priority'>
-    
-
-
-  /**
    * Reference to a field of type 'Float'
    */
   export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -3425,7 +3400,7 @@ export namespace Prisma {
     description?: StringNullableFilter<"Todo"> | string | null
     completed?: BoolFilter<"Todo"> | boolean
     dueDate?: DateTimeNullableFilter<"Todo"> | Date | string | null
-    priority?: EnumPriorityFilter<"Todo"> | $Enums.Priority
+    priority?: StringFilter<"Todo"> | string
     userId?: IntFilter<"Todo"> | number
     createdAt?: DateTimeFilter<"Todo"> | Date | string
     updatedAt?: DateTimeFilter<"Todo"> | Date | string
@@ -3454,7 +3429,7 @@ export namespace Prisma {
     description?: StringNullableFilter<"Todo"> | string | null
     completed?: BoolFilter<"Todo"> | boolean
     dueDate?: DateTimeNullableFilter<"Todo"> | Date | string | null
-    priority?: EnumPriorityFilter<"Todo"> | $Enums.Priority
+    priority?: StringFilter<"Todo"> | string
     userId?: IntFilter<"Todo"> | number
     createdAt?: DateTimeFilter<"Todo"> | Date | string
     updatedAt?: DateTimeFilter<"Todo"> | Date | string
@@ -3487,7 +3462,7 @@ export namespace Prisma {
     description?: StringNullableWithAggregatesFilter<"Todo"> | string | null
     completed?: BoolWithAggregatesFilter<"Todo"> | boolean
     dueDate?: DateTimeNullableWithAggregatesFilter<"Todo"> | Date | string | null
-    priority?: EnumPriorityWithAggregatesFilter<"Todo"> | $Enums.Priority
+    priority?: StringWithAggregatesFilter<"Todo"> | string
     userId?: IntWithAggregatesFilter<"Todo"> | number
     createdAt?: DateTimeWithAggregatesFilter<"Todo"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Todo"> | Date | string
@@ -3555,7 +3530,7 @@ export namespace Prisma {
     description?: string | null
     completed?: boolean
     dueDate?: Date | string | null
-    priority?: $Enums.Priority
+    priority?: string
     createdAt?: Date | string
     updatedAt?: Date | string
     user: UserCreateNestedOneWithoutTodosInput
@@ -3567,7 +3542,7 @@ export namespace Prisma {
     description?: string | null
     completed?: boolean
     dueDate?: Date | string | null
-    priority?: $Enums.Priority
+    priority?: string
     userId: number
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -3578,7 +3553,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     completed?: BoolFieldUpdateOperationsInput | boolean
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
+    priority?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneRequiredWithoutTodosNestedInput
@@ -3590,7 +3565,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     completed?: BoolFieldUpdateOperationsInput | boolean
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
+    priority?: StringFieldUpdateOperationsInput | string
     userId?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -3602,7 +3577,7 @@ export namespace Prisma {
     description?: string | null
     completed?: boolean
     dueDate?: Date | string | null
-    priority?: $Enums.Priority
+    priority?: string
     userId: number
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -3613,7 +3588,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     completed?: BoolFieldUpdateOperationsInput | boolean
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
+    priority?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -3624,7 +3599,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     completed?: BoolFieldUpdateOperationsInput | boolean
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
+    priority?: StringFieldUpdateOperationsInput | string
     userId?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -3807,13 +3782,6 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
-  export type EnumPriorityFilter<$PrismaModel = never> = {
-    equals?: $Enums.Priority | EnumPriorityFieldRefInput<$PrismaModel>
-    in?: $Enums.Priority[]
-    notIn?: $Enums.Priority[]
-    not?: NestedEnumPriorityFilter<$PrismaModel> | $Enums.Priority
-  }
-
   export type UserScalarRelationFilter = {
     is?: UserWhereInput
     isNot?: UserWhereInput
@@ -3885,16 +3853,6 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
-  }
-
-  export type EnumPriorityWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.Priority | EnumPriorityFieldRefInput<$PrismaModel>
-    in?: $Enums.Priority[]
-    notIn?: $Enums.Priority[]
-    not?: NestedEnumPriorityWithAggregatesFilter<$PrismaModel> | $Enums.Priority
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumPriorityFilter<$PrismaModel>
-    _max?: NestedEnumPriorityFilter<$PrismaModel>
   }
 
   export type TodoCreateNestedManyWithoutUserInput = {
@@ -3971,10 +3929,6 @@ export namespace Prisma {
 
   export type NullableDateTimeFieldUpdateOperationsInput = {
     set?: Date | string | null
-  }
-
-  export type EnumPriorityFieldUpdateOperationsInput = {
-    set?: $Enums.Priority
   }
 
   export type UserUpdateOneRequiredWithoutTodosNestedInput = {
@@ -4137,13 +4091,6 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
-  export type NestedEnumPriorityFilter<$PrismaModel = never> = {
-    equals?: $Enums.Priority | EnumPriorityFieldRefInput<$PrismaModel>
-    in?: $Enums.Priority[]
-    notIn?: $Enums.Priority[]
-    not?: NestedEnumPriorityFilter<$PrismaModel> | $Enums.Priority
-  }
-
   export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
@@ -4166,22 +4113,12 @@ export namespace Prisma {
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
-  export type NestedEnumPriorityWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.Priority | EnumPriorityFieldRefInput<$PrismaModel>
-    in?: $Enums.Priority[]
-    notIn?: $Enums.Priority[]
-    not?: NestedEnumPriorityWithAggregatesFilter<$PrismaModel> | $Enums.Priority
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumPriorityFilter<$PrismaModel>
-    _max?: NestedEnumPriorityFilter<$PrismaModel>
-  }
-
   export type TodoCreateWithoutUserInput = {
     title: string
     description?: string | null
     completed?: boolean
     dueDate?: Date | string | null
-    priority?: $Enums.Priority
+    priority?: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -4192,7 +4129,7 @@ export namespace Prisma {
     description?: string | null
     completed?: boolean
     dueDate?: Date | string | null
-    priority?: $Enums.Priority
+    priority?: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -4231,7 +4168,7 @@ export namespace Prisma {
     description?: StringNullableFilter<"Todo"> | string | null
     completed?: BoolFilter<"Todo"> | boolean
     dueDate?: DateTimeNullableFilter<"Todo"> | Date | string | null
-    priority?: EnumPriorityFilter<"Todo"> | $Enums.Priority
+    priority?: StringFilter<"Todo"> | string
     userId?: IntFilter<"Todo"> | number
     createdAt?: DateTimeFilter<"Todo"> | Date | string
     updatedAt?: DateTimeFilter<"Todo"> | Date | string
@@ -4289,7 +4226,7 @@ export namespace Prisma {
     description?: string | null
     completed?: boolean
     dueDate?: Date | string | null
-    priority?: $Enums.Priority
+    priority?: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -4299,7 +4236,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     completed?: BoolFieldUpdateOperationsInput | boolean
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
+    priority?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -4310,7 +4247,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     completed?: BoolFieldUpdateOperationsInput | boolean
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
+    priority?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -4321,7 +4258,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     completed?: BoolFieldUpdateOperationsInput | boolean
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
+    priority?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
